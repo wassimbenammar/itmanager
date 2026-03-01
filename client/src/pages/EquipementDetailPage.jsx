@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Pencil, Trash2, RefreshCw, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, RefreshCw, AlertCircle, Copy } from 'lucide-react';
 import { getEquipement, deleteEquipement } from '../api/equipements';
-import { warrantyLookup } from '../api/equipementExtras';
+import { warrantyLookup, cloneEquipement } from '../api/equipementExtras';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
+import { TagInput } from '../components/common/TagInput';
 import { PhotoGallery } from '../components/equipements/PhotoGallery';
 import { RemiseDialog } from '../components/equipements/RemiseDialog';
 import { LifecycleTimeline } from '../components/equipements/LifecycleTimeline';
 import { SoftwareList } from '../components/equipements/SoftwareList';
 import { QRCodePrint } from '../components/equipements/QRCodePrint';
+import { MaintenanceList } from '../components/equipements/MaintenanceList';
+import { DocumentList } from '../components/equipements/DocumentList';
 
 const TYPE_LABELS = { ordinateur: 'Ordinateur', serveur: 'Serveur', reseau: 'Réseau', mobile: 'Mobile', autre: 'Autre' };
 
@@ -19,6 +22,8 @@ const TABS = [
   { key: 'photos', label: 'Photos' },
   { key: 'logiciels', label: 'Logiciels' },
   { key: 'remises', label: 'Remises' },
+  { key: 'maintenance', label: 'Maintenance' },
+  { key: 'documents', label: 'Documents' },
   { key: 'lifecycle', label: 'Cycle de vie' },
 ];
 
@@ -97,10 +102,12 @@ export default function EquipementDetailPage() {
 
   const del = useMutation({
     mutationFn: () => deleteEquipement(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['equipements'] });
-      navigate('/equipements');
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['equipements'] }); navigate('/equipements'); },
+  });
+
+  const clone = useMutation({
+    mutationFn: () => cloneEquipement(id),
+    onSuccess: (data) => { qc.invalidateQueries({ queryKey: ['equipements'] }); navigate(`/equipements/${data.id}`); },
   });
 
   if (isLoading) return <div className="text-gray-400">Chargement...</div>;
@@ -123,6 +130,9 @@ export default function EquipementDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={() => clone.mutate()} disabled={clone.isPending} title="Dupliquer" className="p-2 text-gray-500 hover:text-gray-300 hover:bg-gray-800 rounded-lg transition-colors">
+            <Copy size={16} />
+          </button>
           <Link to={`/equipements/${id}/modifier`} className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors">
             <Pencil size={14} /> Modifier
           </Link>
@@ -130,6 +140,12 @@ export default function EquipementDetailPage() {
             <Trash2 size={14} /> Supprimer
           </button>
         </div>
+      </div>
+
+      {/* Tags */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-gray-500">Tags:</span>
+        <TagInput equipementId={+id} />
       </div>
 
       {/* Tabs */}
@@ -160,6 +176,15 @@ export default function EquipementDetailPage() {
               <Field label="Date d'achat" value={eq.date_achat} />
               <Field label="Localisation" value={eq.localisation} />
               <Field label="Utilisateur" value={eq.utilisateur_nom ? `${eq.utilisateur_nom}${eq.utilisateur_email ? ' (' + eq.utilisateur_email + ')' : ''}` : null} />
+              {eq.hostname && <Field label="Hostname" value={eq.hostname} />}
+              {eq.adresse_ip && <Field label="Adresse IP" value={eq.adresse_ip} />}
+              {eq.adresse_mac && <Field label="Adresse MAC" value={eq.adresse_mac} />}
+              {eq.prix_achat && <Field label="Prix d'achat" value={`${eq.prix_achat} €`} />}
+              {eq.prix_achat && eq.duree_amortissement_ans && eq.date_achat && (() => {
+                const ageAns = (new Date() - new Date(eq.date_achat)) / (365.25 * 86400000);
+                const valeur = Math.max(0, eq.prix_achat * (1 - ageAns / eq.duree_amortissement_ans));
+                return <Field label="Valeur résiduelle" value={`${valeur.toFixed(2)} €`} />;
+              })()}
               {eq.notes && <div className="col-span-2"><Field label="Notes" value={eq.notes} /></div>}
             </dl>
           </div>
@@ -179,6 +204,16 @@ export default function EquipementDetailPage() {
       {tab === 'photos' && <PhotoGallery equipementId={+id} />}
       {tab === 'logiciels' && <SoftwareList equipementId={+id} />}
       {tab === 'remises' && <RemiseDialog equipementId={+id} />}
+      {tab === 'maintenance' && (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <MaintenanceList equipementId={+id} />
+        </div>
+      )}
+      {tab === 'documents' && (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <DocumentList equipementId={+id} />
+        </div>
+      )}
       {tab === 'lifecycle' && <LifecycleTimeline equipementId={+id} />}
 
       <ConfirmDialog

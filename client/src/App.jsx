@@ -16,6 +16,9 @@ import UtilisateursPage from './pages/UtilisateursPage';
 import UtilisateurDetailPage from './pages/UtilisateurDetailPage';
 import AuditPage from './pages/AuditPage';
 import ParametresPage from './pages/ParametresPage';
+import FournisseursPage from './pages/FournisseursPage';
+import FournisseurFormPage from './pages/FournisseurFormPage';
+import ReportsPage from './pages/ReportsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -55,6 +58,10 @@ export default function App() {
               <Route path="comptes/:id/modifier" element={<CompteFormPage />} />
               <Route path="utilisateurs" element={<UtilisateursPage />} />
               <Route path="utilisateurs/:id" element={<UtilisateurDetailPage />} />
+              <Route path="fournisseurs" element={<FournisseursPage />} />
+              <Route path="fournisseurs/nouveau" element={<FournisseurFormPage />} />
+              <Route path="fournisseurs/:id/modifier" element={<FournisseurFormPage />} />
+              <Route path="rapports" element={<ReportsPage />} />
               <Route path="audit" element={<AuditPage />} />
               <Route path="parametres" element={<ParametresPage />} />
             </Route>

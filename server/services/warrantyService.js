@@ -4,6 +4,15 @@ const http = require('http');
 // In-memory token cache: { dell: { token, expiresAt }, hp: { token, expiresAt } }
 const tokenCache = {};
 
+function getCred(dbKey, envKey) {
+  try {
+    const { getSetting } = require('./settingsService');
+    return getSetting(dbKey) || process.env[envKey] || null;
+  } catch {
+    return process.env[envKey] || null;
+  }
+}
+
 function fetchJson(options, body = null) {
   return new Promise((resolve, reject) => {
     const lib = options.protocol === 'http:' ? http : https;
@@ -25,8 +34,8 @@ async function getDellToken() {
   const cached = tokenCache.dell;
   if (cached && cached.expiresAt > Date.now()) return cached.token;
 
-  const clientId = process.env.DELL_CLIENT_ID;
-  const clientSecret = process.env.DELL_CLIENT_SECRET;
+  const clientId = getCred('dell_client_id', 'DELL_CLIENT_ID');
+  const clientSecret = getCred('dell_client_secret', 'DELL_CLIENT_SECRET');
   if (!clientId || !clientSecret) throw new Error('DELL_CLIENT_ID / DELL_CLIENT_SECRET non configurés');
 
   const body = `client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(clientSecret)}&grant_type=client_credentials`;
@@ -46,8 +55,8 @@ async function getHpToken() {
   const cached = tokenCache.hp;
   if (cached && cached.expiresAt > Date.now()) return cached.token;
 
-  const apiKey = process.env.HP_API_KEY;
-  const apiSecret = process.env.HP_API_SECRET;
+  const apiKey = getCred('hp_api_key', 'HP_API_KEY');
+  const apiSecret = getCred('hp_api_secret', 'HP_API_SECRET');
   if (!apiKey || !apiSecret) throw new Error('HP_API_KEY / HP_API_SECRET non configurés');
 
   const body = `grant_type=client_credentials&client_id=${encodeURIComponent(apiKey)}&client_secret=${encodeURIComponent(apiSecret)}`;
@@ -118,7 +127,7 @@ async function lookupHp(serial) {
 }
 
 async function lookupLenovo(serial) {
-  const clientId = process.env.LENOVO_CLIENT_ID;
+  const clientId = getCred('lenovo_client_id', 'LENOVO_CLIENT_ID');
   if (!clientId) throw new Error('LENOVO_CLIENT_ID non configuré');
 
   const res = await fetchJson({

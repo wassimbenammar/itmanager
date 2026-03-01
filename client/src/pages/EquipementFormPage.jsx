@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { getEquipement, createEquipement, updateEquipement } from '../api/equipements';
 import { getUtilisateurs } from '../api/utilisateurs';
+import { getFournisseurs } from '../api/fournisseurs';
 
 const TYPES = ['ordinateur', 'serveur', 'reseau', 'mobile', 'autre'];
 const STATUTS = ['actif', 'hors_service', 'maintenance', 'stock'];
@@ -13,6 +14,8 @@ const EMPTY = {
   statut: 'actif', utilisateur_id: '', localisation: '', notes: '',
   date_garantie_debut: '', date_garantie_fin: '', garantie_fournisseur: '',
   date_fin_vie: '', numero_bon_commande: '',
+  fournisseur_id: '', adresse_ip: '', adresse_mac: '', hostname: '',
+  prix_achat: '', duree_amortissement_ans: '',
 };
 
 export default function EquipementFormPage() {
@@ -25,6 +28,7 @@ export default function EquipementFormPage() {
 
   const { data: eq } = useQuery({ queryKey: ['equipement', id], queryFn: () => getEquipement(id), enabled: isEdit });
   const { data: users } = useQuery({ queryKey: ['utilisateurs-all'], queryFn: () => getUtilisateurs({ limit: 200 }) });
+  const { data: fournisseurs } = useQuery({ queryKey: ['fournisseurs'], queryFn: () => getFournisseurs() });
 
   useEffect(() => {
     if (eq) setForm({ ...EMPTY, ...eq, utilisateur_id: eq.utilisateur_id || '' });
@@ -134,6 +138,38 @@ export default function EquipementFormPage() {
           <div>
             <label className={labelCls}>Bon de commande</label>
             <input className={inputCls} value={form.numero_bon_commande} onChange={e => set('numero_bon_commande', e.target.value)} />
+          </div>
+
+          {/* Network & financial */}
+          <div className="sm:col-span-2 border-t border-gray-700 pt-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Réseau & Financier</p>
+          </div>
+          <div>
+            <label className={labelCls}>Fournisseur</label>
+            <select className={inputCls} value={form.fournisseur_id} onChange={e => set('fournisseur_id', e.target.value)}>
+              <option value="">— Aucun —</option>
+              {fournisseurs?.map(f => <option key={f.id} value={f.id}>{f.nom}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>Hostname</label>
+            <input className={inputCls} value={form.hostname} onChange={e => set('hostname', e.target.value)} placeholder="pc-john-doe" />
+          </div>
+          <div>
+            <label className={labelCls}>Adresse IP</label>
+            <input className={inputCls} value={form.adresse_ip} onChange={e => set('adresse_ip', e.target.value)} placeholder="192.168.1.x" />
+          </div>
+          <div>
+            <label className={labelCls}>Adresse MAC</label>
+            <input className={inputCls} value={form.adresse_mac} onChange={e => set('adresse_mac', e.target.value)} placeholder="AA:BB:CC:DD:EE:FF" />
+          </div>
+          <div>
+            <label className={labelCls}>Prix d'achat (€)</label>
+            <input type="number" step="0.01" className={inputCls} value={form.prix_achat} onChange={e => set('prix_achat', e.target.value)} />
+          </div>
+          <div>
+            <label className={labelCls}>Durée amortissement (ans)</label>
+            <input type="number" min="1" max="20" className={inputCls} value={form.duree_amortissement_ans} onChange={e => set('duree_amortissement_ans', e.target.value)} />
           </div>
         </div>
 

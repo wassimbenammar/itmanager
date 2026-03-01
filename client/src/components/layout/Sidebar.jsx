@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Monitor, Package, Globe, Users,
-  ClipboardList, Settings, LogOut, X
+  ClipboardList, Settings, LogOut, X, Building2, BarChart2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { clsx } from 'clsx';
@@ -15,6 +15,8 @@ const NAV_ITEMS = [
   { to: '/logiciels', icon: Package, label: 'Licences' },
   { to: '/comptes', icon: Globe, label: 'Comptes externes' },
   { to: '/utilisateurs', icon: Users, label: 'Utilisateurs' },
+  { to: '/fournisseurs', icon: Building2, label: 'Fournisseurs' },
+  { to: '/rapports', icon: BarChart2, label: 'Rapports' },
   { to: '/audit', icon: ClipboardList, label: 'Audit' },
   { to: '/parametres', icon: Settings, label: 'Paramètres' },
 ];

@@ -3,8 +3,40 @@ const router = express.Router();
 const { requireAuth } = require('../config/jwt');
 const svc = require('../services/equipementService');
 const { lookupWarranty } = require('../services/warrantyService');
+const docSvc = require('../services/documentService');
+const mainSvc = require('../services/maintenanceService');
+const tagSvc = require('../services/tagService');
+const { toCsv } = require('../services/reportService');
 
 router.use(requireAuth);
+
+// ── Export CSV (must be before /:id routes) ───────────────────────────────────
+router.get('/export/csv', (req, res) => {
+  const { type, statut, search } = req.query;
+  const result = svc.list({ type, statut, search, page: 1, limit: 99999 });
+  const cols = ['id','nom','type','fabricant','modele','numero_serie','statut','localisation','hostname','adresse_ip','adresse_mac','utilisateur_nom','date_achat','prix_achat','date_garantie_fin','notes'];
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="equipements.csv"');
+  res.send('\uFEFF' + toCsv(result.data, cols));
+});
+
+// ── Bulk Operations (must be before /:id routes) ──────────────────────────────
+router.post('/bulk', (req, res) => {
+  const { ids, action, statut } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'ids requis' });
+  if (action === 'delete') {
+    for (const id of ids) svc.remove(id, req.user.id);
+    return res.json({ ok: true, affected: ids.length });
+  }
+  if (action === 'statut' && statut) {
+    for (const id of ids) {
+      const eq = svc.getById(id);
+      if (eq) svc.update(id, { ...eq, statut }, req.user.id);
+    }
+    return res.json({ ok: true, affected: ids.length });
+  }
+  res.status(400).json({ error: 'Action inconnue' });
+});
 
 // GET /api/equipements
 router.get('/', (req, res) => {
@@ -156,6 +188,82 @@ router.post('/:id/warranty/lookup', async (req, res) => {
   } catch (err) {
     res.status(502).json({ error: err.message });
   }
+});
+
+// ── Documents ─────────────────────────────────────────────────────────────────
+
+router.get('/:id/documents', (req, res) => {
+  if (!svc.getById(+req.params.id)) return res.status(404).json({ error: 'Équipement introuvable' });
+  res.json(docSvc.getByEquipement(+req.params.id));
+});
+
+router.post('/:id/documents', (req, res) => {
+  if (!svc.getById(+req.params.id)) return res.status(404).json({ error: 'Équipement introuvable' });
+  const { nom, type_mime, data, taille } = req.body;
+  if (!nom || !data) return res.status(400).json({ error: 'nom et data requis' });
+  res.status(201).json(docSvc.add(+req.params.id, { nom, type_mime, data, taille }));
+});
+
+router.get('/:id/documents/:did', (req, res) => {
+  const doc = docSvc.getById(+req.params.did);
+  if (!doc || doc.equipement_id !== +req.params.id) return res.status(404).json({ error: 'Document introuvable' });
+  res.json(doc);
+});
+
+router.delete('/:id/documents/:did', (req, res) => {
+  const doc = docSvc.getById(+req.params.did);
+  if (!doc || doc.equipement_id !== +req.params.id) return res.status(404).json({ error: 'Document introuvable' });
+  docSvc.remove(+req.params.did);
+  res.json({ ok: true });
+});
+
+// ── Maintenances ──────────────────────────────────────────────────────────────
+
+router.get('/:id/maintenances', (req, res) => {
+  if (!svc.getById(+req.params.id)) return res.status(404).json({ error: 'Équipement introuvable' });
+  res.json(mainSvc.getByEquipement(+req.params.id));
+});
+
+router.post('/:id/maintenances', (req, res) => {
+  if (!svc.getById(+req.params.id)) return res.status(404).json({ error: 'Équipement introuvable' });
+  res.status(201).json(mainSvc.create(+req.params.id, req.body));
+});
+
+router.put('/:id/maintenances/:mid', (req, res) => {
+  res.json(mainSvc.update(+req.params.mid, req.body));
+});
+
+router.delete('/:id/maintenances/:mid', (req, res) => {
+  mainSvc.remove(+req.params.mid);
+  res.json({ ok: true });
+});
+
+// ── Tags ──────────────────────────────────────────────────────────────────────
+
+router.get('/:id/tags', (req, res) => {
+  res.json(tagSvc.getByEquipement(+req.params.id));
+});
+
+router.post('/:id/tags/:tid', (req, res) => {
+  tagSvc.addTag(+req.params.id, +req.params.tid);
+  res.json({ ok: true });
+});
+
+router.delete('/:id/tags/:tid', (req, res) => {
+  tagSvc.removeTag(+req.params.id, +req.params.tid);
+  res.json({ ok: true });
+});
+
+// ── Clone ─────────────────────────────────────────────────────────────────────
+
+router.post('/:id/clone', (req, res) => {
+  const eq = svc.getById(+req.params.id);
+  if (!eq) return res.status(404).json({ error: 'Équipement introuvable' });
+  const { id, created_at, updated_at, utilisateur_nom, utilisateur_email, ...data } = eq;
+  data.nom = `${eq.nom} (copie)`;
+  data.numero_serie = null;
+  const clone = svc.create(data, req.user.id);
+  res.status(201).json(clone);
 });
 
 module.exports = router;

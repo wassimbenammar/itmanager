@@ -43,13 +43,15 @@ function create(data, userId) {
       nom, type, numero_serie, fabricant, modele, date_achat, statut,
       utilisateur_id, localisation, notes,
       date_garantie_debut, date_garantie_fin, garantie_fournisseur,
-      date_fin_vie, numero_bon_commande
+      date_fin_vie, numero_bon_commande,
+      fournisseur_id, adresse_ip, adresse_mac, hostname, prix_achat, duree_amortissement_ans
     )
     VALUES (
       @nom, @type, @numero_serie, @fabricant, @modele, @date_achat, @statut,
       @utilisateur_id, @localisation, @notes,
       @date_garantie_debut, @date_garantie_fin, @garantie_fournisseur,
-      @date_fin_vie, @numero_bon_commande
+      @date_fin_vie, @numero_bon_commande,
+      @fournisseur_id, @adresse_ip, @adresse_mac, @hostname, @prix_achat, @duree_amortissement_ans
     )
   `);
   const result = stmt.run({
@@ -58,6 +60,10 @@ function create(data, userId) {
     date_achat: data.date_achat || null, statut: data.statut || 'actif',
     utilisateur_id: data.utilisateur_id || null, localisation: data.localisation || null,
     notes: data.notes || null,
+    fournisseur_id: data.fournisseur_id || null, adresse_ip: data.adresse_ip || null,
+    adresse_mac: data.adresse_mac || null, hostname: data.hostname || null,
+    prix_achat: data.prix_achat ? +data.prix_achat : null,
+    duree_amortissement_ans: data.duree_amortissement_ans ? +data.duree_amortissement_ans : null,
     date_garantie_debut: data.date_garantie_debut || null,
     date_garantie_fin: data.date_garantie_fin || null,
     garantie_fournisseur: data.garantie_fournisseur || null,
@@ -88,6 +94,8 @@ function update(id, data, userId) {
       date_garantie_debut = @date_garantie_debut, date_garantie_fin = @date_garantie_fin,
       garantie_fournisseur = @garantie_fournisseur, date_fin_vie = @date_fin_vie,
       numero_bon_commande = @numero_bon_commande,
+      fournisseur_id = @fournisseur_id, adresse_ip = @adresse_ip, adresse_mac = @adresse_mac,
+      hostname = @hostname, prix_achat = @prix_achat, duree_amortissement_ans = @duree_amortissement_ans,
       updated_at = datetime('now')
     WHERE id = @id
   `).run({
@@ -101,6 +109,10 @@ function update(id, data, userId) {
     garantie_fournisseur: data.garantie_fournisseur || null,
     date_fin_vie: data.date_fin_vie || null,
     numero_bon_commande: data.numero_bon_commande || null,
+    fournisseur_id: data.fournisseur_id || null, adresse_ip: data.adresse_ip || null,
+    adresse_mac: data.adresse_mac || null, hostname: data.hostname || null,
+    prix_achat: data.prix_achat ? +data.prix_achat : null,
+    duree_amortissement_ans: data.duree_amortissement_ans ? +data.duree_amortissement_ans : null,
     id,
   });
 

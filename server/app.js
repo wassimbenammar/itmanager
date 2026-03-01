@@ -12,6 +12,10 @@ const dashboardRoutes = require('./routes/dashboard');
 const notificationsRoutes = require('./routes/notifications');
 const auditRoutes = require('./routes/audit');
 const searchRoutes = require('./routes/search');
+const settingsRoutes = require('./routes/settings');
+const fournisseursRoutes = require('./routes/fournisseurs');
+const tagsRoutes = require('./routes/tags');
+const reportsRoutes = require('./routes/reports');
 
 function createApp() {
   const app = express();
@@ -57,6 +61,10 @@ function createApp() {
   app.use('/api/notifications', notificationsRoutes);
   app.use('/api/audit', auditRoutes);
   app.use('/api/search', searchRoutes);
+  app.use('/api/settings', settingsRoutes);
+  app.use('/api/fournisseurs', fournisseursRoutes);
+  app.use('/api/tags', tagsRoutes);
+  app.use('/api/reports', reportsRoutes);
 
   if (process.env.NODE_ENV === 'production') {
     const path = require('path');
