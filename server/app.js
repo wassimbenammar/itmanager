@@ -22,8 +22,10 @@ function createApp() {
 
   app.use(
     helmet({
-      // Disable HSTS — server runs plain HTTP, HSTS would force browsers to HTTPS permanently
+      // Disable headers that only make sense on HTTPS
       strictTransportSecurity: false,
+      crossOriginOpenerPolicy: false,
+      originAgentCluster: false,
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
