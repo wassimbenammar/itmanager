@@ -22,14 +22,17 @@ function createApp() {
 
   app.use(
     helmet({
+      // Disable HSTS — server runs plain HTTP, HSTS would force browsers to HTTPS permanently
+      strictTransportSecurity: false,
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-eval'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           fontSrc: ["'self'", 'data:'],
-          imgSrc: ["'self'", 'data:'],
+          imgSrc: ["'self'", 'data:', 'blob:'],
           connectSrc: ["'self'"],
+          upgradeInsecureRequests: null,  // disabled — server runs HTTP only
         },
       },
     })
