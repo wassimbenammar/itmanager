@@ -22,19 +22,23 @@ function createApp() {
 
   app.use(
     helmet({
-      // Disable headers that only make sense on HTTPS
       strictTransportSecurity: false,
       crossOriginOpenerPolicy: false,
       originAgentCluster: false,
       contentSecurityPolicy: {
+        useDefaults: false,  // take full control — prevents Helmet adding upgrade-insecure-requests
         directives: {
           defaultSrc: ["'self'"],
+          baseUri: ["'self'"],
+          formAction: ["'self'"],
+          frameAncestors: ["'self'"],
+          objectSrc: ["'none'"],
           scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          scriptSrcAttr: ["'none'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           fontSrc: ["'self'", 'data:'],
           imgSrc: ["'self'", 'data:', 'blob:'],
           connectSrc: ["'self'"],
-          upgradeInsecureRequests: null,  // disabled — server runs HTTP only
         },
       },
     })
@@ -42,9 +46,7 @@ function createApp() {
 
   app.use(
     cors({
-      origin: process.env.NODE_ENV === 'production'
-        ? (process.env.CORS_ORIGIN || false)
-        : true,
+      origin: process.env.CORS_ORIGIN || true,  // allow all origins on LAN
       credentials: true,
     })
   );
